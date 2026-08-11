@@ -1,8 +1,10 @@
-# API de Numerología — Fase 1
+# API de Numerología
 
-**Alcance de esta fase:** inicialización del proyecto, configuración de variables de entorno y conexión exitosa a MongoDB Atlas. Nada más (modelos, rutas, autenticación, IA y Docker llegan en las fases siguientes).
+## Fase 1
 
-## Instalación
+**Alcance de esta fase:** inicialización del proyecto, configuración de variables de entorno y conexión exitosa a MongoDB Atlas.
+
+### Instalación
 
 ```bash
 npm install
@@ -11,7 +13,7 @@ cp .env.example .env
 
 Edita `.env` y agrega tu cadena de conexión de **MongoDB Atlas** en `MONGO_URI`.
 
-## Probar la conexión a MongoDB
+### Probar la conexión a MongoDB
 
 ```bash
 node test-conexion.js
@@ -24,7 +26,7 @@ Conexión exitosa a MongoDB Atlas
 Base de datos activa: numerologia_db
 ```
 
-## Iniciar el servidor
+### Iniciar el servidor
 
 ```bash
 npm run dev
@@ -51,26 +53,50 @@ En la consola también aparecerá:
 MongoDB Atlas conectado correctamente
 ```
 
-## Estructura del proyecto
+## Fase 2
+
+**Alcance de esta fase:** creación de los esquemas de MongoDB (2-a), rutas y controladores CRUD base (2-b), y autenticación con JWT + encriptación de contraseñas con bcrypt (2-c).
+
+### Variables de entorno adicionales
+
+A las de la Fase 1 se suman:
 
 ```text
-numerologia-api/
-├── server.js
-├── test-conexion.js
-├── package.json
-├── .env.example
-└── src/
-    └── config/
-        └── db.js
+JWT_SECRET=cualquier_texto_largo_y_secreto
+GEMINI_API_KEY=se_agrega_en_fase_4
 ```
 
-## Próximas fases
+### Instalar dependencias nuevas
 
-| Fase | Contenido |
-|------|-----------|
-| 2-a | Esquemas de las 5 colecciones (Users, NumerologyProfiles, Readings, CompatibilityMatches y AuditLogs) |
-| 2-b | Rutas y controladores base |
-| 2-c | Autenticación con JWT y bcrypt |
-| 3 | Algoritmos de numerología |
-| 4 | Integración con Google Gemini |
-| 5 | Auditoría, validaciones y manejo de errores |
+```bash
+npm install bcryptjs jsonwebtoken
+```
+
+### Endpoints disponibles
+
+#### Autenticación (`/api/v1/auth`) — públicos
+
+| Método | Endpoint | Body |
+|--------|----------|------|
+| POST | `/register` | `nombre_completo`, `email`, `password`, `fecha_nacimiento` |
+| POST | `/login` | `email`, `password` → devuelve `token` |
+
+#### Numerología (`/api/v1/numerology`) — protegidos con JWT
+
+| Método | Endpoint | Requiere |
+|--------|----------|----------|
+| POST | `/calculate` | Header `Authorization: Bearer <token>` |
+| GET | `/profile` | Header `Authorization: Bearer <token>` |
+
+#### Lecturas (`/api/v1/readings`) — protegidos con JWT
+
+| Método | Endpoint | Requiere |
+|--------|----------|----------|
+| POST | `/generate` | Header `Authorization: Bearer <token>`, body `tipo_lectura` |
+| GET | `/history` | Header `Authorization: Bearer <token>` |
+
+#### Compatibilidad (`/api/v1/compatibility`) — protegidos con JWT
+
+| Método | Endpoint | Requiere |
+|--------|----------|----------|
+|
