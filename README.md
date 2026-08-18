@@ -99,4 +99,82 @@ npm install bcryptjs jsonwebtoken
 
 | Método | Endpoint | Requiere |
 |--------|----------|----------|
-|
+| POST | `/check` | Header `Authorization: Bearer <token>`, body `id_otro_usuario` |
+
+> Los cálculos numerológicos, el texto de las lecturas y el análisis de compatibilidad aún devuelven valores en 0 o mensajes provisionales — la lógica real llega en la Fase 3 (algoritmos) y la Fase 4 (Gemini).
+
+### Cómo probar el flujo completo
+
+1. `POST /api/v1/auth/register` — crea el usuario.
+2. `POST /api/v1/auth/login` — devuelve el `token`.
+3. Copia el `token` y agrégalo en cualquier ruta protegida como header `Authorization: Bearer <token>`.
+4. `POST /api/v1/numerology/calculate` — crea el perfil (sin body, el usuario se toma del token).
+5. `GET /api/v1/numerology/profile` — consulta ese perfil.
+
+## Fase 3
+
+**Alcance de esta fase:** algoritmos de numerología pitagórica (suma y reducción numérica) para calcular los tres números centrales del perfil, reemplazando los valores en 0 que se dejaron como placeholder en la Fase 2.
+
+### Archivo nuevo
+
+```text
+src/utils/numerologia.js
+```
+
+### Funciones
+
+| Función | Qué calcula |
+|---------|-------------|
+| `reducirNumero(numero)` | Suma los dígitos de un número hasta dejarlo en un solo dígito, respetando los números maestros (11, 22, 33) sin reducirlos más |
+| `calcularNumeroVida(fechaNacimiento)` | Camino de Vida: suma todos los dígitos de la fecha de nacimiento (día + mes + año) y reduce |
+| `calcularNumeroExpresion(nombreCompleto)` | Expresión: convierte cada letra del nombre completo a un número (tabla pitagórica) y suma todo |
+| `calcularNumeroAlma(nombreCompleto)` | Alma: igual que Expresión, pero solo con las vocales del nombre |
+
+### Cambios en `numerology.controller.js`
+
+El endpoint `POST /api/v1/numerology/calculate` ahora busca al usuario autenticado (por `req.user.id`), toma su `nombre_completo` y `fecha_nacimiento`, y calcula los tres números reales en vez de guardar ceros.
+
+### Cómo probar
+
+1. `POST /api/v1/numerology/calculate` — con header `Authorization: Bearer <token>`, body vacío `{}`.
+2. `GET /api/v1/numerology/profile` — mismo header, sin body. Debe devolver `numero_vida`, `numero_expresion` y `numero_alma` con valores del 1 al 9 (o 11/22/33 si sale un número maestro).
+
+## Estructura del proyecto
+
+```text
+numerologia-api/
+├── server.js
+├── test-conexion.js
+├── package.json
+├── .env.example
+└── src/
+    ├── config/
+    │   └── db.js
+    ├── models/
+    │   ├── User.js
+    │   ├── NumerologyProfile.js
+    │   ├── Reading.js
+    │   ├── CompatibilityMatch.js
+    │   └── AuditLog.js
+    ├── controllers/
+    │   ├── auth.controller.js
+    │   ├── numerology.controller.js
+    │   ├── readings.controller.js
+    │   └── compatibility.controller.js
+    ├── routes/
+    │   ├── auth.routes.js
+    │   ├── numerology.routes.js
+    │   ├── readings.routes.js
+    │   └── compatibility.routes.js
+    ├── middlewares/
+    │   └── auth.middleware.js
+    └── utils/
+        └── numerologia.js
+```
+
+## Próximas fases
+
+| Fase | Contenido |
+|------|-----------|
+| 4 | Integración con Google Gemini (SDK e ingeniería de prompts) |
+| 5 | Colección de auditoría, validación de datos, manejo de errores y pruebas finales |

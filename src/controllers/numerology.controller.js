@@ -1,11 +1,22 @@
 const NumerologyProfile = require('../models/NumerologyProfile');
+const User = require('../models/User');
+const {
+  calcularNumeroVida,
+  calcularNumeroExpresion,
+  calcularNumeroAlma
+} = require('../utils/numerologia');
 
 async function calculate(req, res) {
   try {
-    // TODO Fase 3: aquí van los algoritmos reales de suma y reducción numerológica.
-    const numero_vida = 0;
-    const numero_expresion = 0;
-    const numero_alma = 0;
+    const usuario = await User.findById(req.user.id);
+
+    if (!usuario) {
+      return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+    }
+
+    const numero_vida = calcularNumeroVida(usuario.fecha_nacimiento);
+    const numero_expresion = calcularNumeroExpresion(usuario.nombre_completo);
+    const numero_alma = calcularNumeroAlma(usuario.nombre_completo);
 
     const perfil = new NumerologyProfile({
       usuario: req.user.id,

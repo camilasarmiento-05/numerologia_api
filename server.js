@@ -23,7 +23,7 @@ app.use('/api/v1/compatibility', compatibilityRoutes);
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'API de Numerología funcionando',
+    message: 'API de Numerología funcionando ',
   });
 });
 
