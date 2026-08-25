@@ -139,6 +139,51 @@ El endpoint `POST /api/v1/numerology/calculate` ahora busca al usuario autentica
 1. `POST /api/v1/numerology/calculate` — con header `Authorization: Bearer <token>`, body vacío `{}`.
 2. `GET /api/v1/numerology/profile` — mismo header, sin body. Debe devolver `numero_vida`, `numero_expresion` y `numero_alma` con valores del 1 al 9 (o 11/22/33 si sale un número maestro).
 
+## Fase 4
+
+**Alcance de esta fase:** integración del SDK de Google Gemini para generar interpretaciones reales en las lecturas y en el análisis de compatibilidad, reemplazando los mensajes provisionales de la Fase 2.
+
+### Variable de entorno necesaria
+
+```text
+GEMINI_API_KEY=tu_api_key_real_de_google_ai_studio
+```
+
+Se obtiene en [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+
+### Dependencia nueva
+
+```bash
+npm install @google/generative-ai
+```
+
+### Archivo nuevo
+
+```text
+src/utils/gemini.js
+```
+
+Expone `generarTexto(prompt)`, que envía un prompt al modelo `gemini-1.5-flash` y devuelve el texto de la respuesta.
+
+### Cambios en los controladores
+
+- **`readings.controller.js`** — `generate` arma un prompt con los tres números del perfil del usuario y el `tipo_lectura` (`diaria`, `general` o `anual`), lo envía a Gemini, y guarda el `prompt_enviado` junto con la `respuesta_generada` real.
+- **`compatibility.controller.js`** — `check` calcula un `puntaje` (0 a 100) comparando la diferencia entre los números de ambos perfiles, arma un prompt con esos números y el puntaje, y guarda la `interpretacion` que devuelve Gemini.
+
+### Cómo probar
+
+```text
+POST /api/v1/readings/generate
+Header: Authorization: Bearer <token>
+Body: { "tipo_lectura": "diaria" }
+```
+
+```text
+POST /api/v1/compatibility/check
+Header: Authorization: Bearer <token>
+Body: { "id_otro_usuario": "<id de otro usuario con perfil ya calculado>" }
+```
+
 ## Estructura del proyecto
 
 ```text
@@ -169,12 +214,12 @@ numerologia-api/
     ├── middlewares/
     │   └── auth.middleware.js
     └── utils/
-        └── numerologia.js
+        ├── numerologia.js
+        └── gemini.js
 ```
 
 ## Próximas fases
 
 | Fase | Contenido |
 |------|-----------|
-| 4 | Integración con Google Gemini (SDK e ingeniería de prompts) |
 | 5 | Colección de auditoría, validación de datos, manejo de errores y pruebas finales |
