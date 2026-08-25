@@ -184,6 +184,64 @@ Header: Authorization: Bearer <token>
 Body: { "id_otro_usuario": "<id de otro usuario con perfil ya calculado>" }
 ```
 
+## Fase 5
+
+**Alcance de esta fase:** colección de auditoría (middleware), validación de datos en los endpoints, y manejo centralizado de errores.
+
+### Archivos nuevos
+
+```text
+src/middlewares/audit.middleware.js
+src/middlewares/validate.middleware.js
+src/middlewares/error.middleware.js
+```
+
+No se agregó ninguna librería nueva — toda la validación y el manejo de errores están hechos con JavaScript plano.
+
+### Auditoría
+
+`audit.middleware.js` se activa en cada petición (`app.use(auditMiddleware)`, antes de las rutas) y, cuando la respuesta termina, guarda en la colección `AuditLogs` el `endpoint`, el `metodo`, el `status_code`, la fecha y el `user_id` (si la petición venía autenticada).
+
+### Validación de datos
+
+`validate.middleware.js` exporta un validador por endpoint:
+
+| Validador | Se usa en | Qué revisa |
+|-----------|-----------|------------|
+| `validarRegistro` | `POST /auth/register` | Campos obligatorios, formato de email, largo mínimo de contraseña, fecha válida |
+| `validarLogin` | `POST /auth/login` | `email` y `password` presentes |
+| `validarLectura` | `POST /readings/generate` | `tipo_lectura` sea `diaria`, `general` o `anual` |
+| `validarCompatibilidad` | `POST /compatibility/check` | `id_otro_usuario` presente |
+
+### Manejo de errores
+
+`error.middleware.js` exporta dos funciones que van al final de `server.js`, después de todas las rutas:
+
+- `notFound` — responde 404 cuando ninguna ruta coincide.
+- `errorHandler` — captura cualquier error no controlado y responde 500 con un mensaje genérico, sin tumbar el servidor.
+
+### Cambios en `server.js`
+
+```javascript
+const auditMiddleware = require('./src/middlewares/audit.middleware');
+const { notFound, errorHandler } = require('./src/middlewares/error.middleware');
+
+app.use(express.json());
+app.use(auditMiddleware);
+
+// ...tus 4 app.use('/api/v1/...', ...) existentes...
+
+app.use(notFound);
+app.use(errorHandler);
+```
+
+### Cómo probar
+
+1. Llama cualquier endpoint y revisa la colección `auditlogs` en MongoDB Atlas — debe aparecer un registro nuevo.
+2. `POST /auth/register` sin `password` — debe responder 400 con un mensaje claro, no 500.
+3. `POST /readings/generate` con `tipo_lectura: "invalido"` — debe responder 400.
+4. `GET /api/v1/loquesea` (una ruta que no existe) — debe responder 404.
+
 ## Estructura del proyecto
 
 ```text
@@ -212,14 +270,15 @@ numerologia-api/
     │   ├── readings.routes.js
     │   └── compatibility.routes.js
     ├── middlewares/
-    │   └── auth.middleware.js
+    │   ├── auth.middleware.js
+    │   ├── audit.middleware.js
+    │   ├── validate.middleware.js
+    │   └── error.middleware.js
     └── utils/
         ├── numerologia.js
         └── gemini.js
 ```
 
-## Próximas fases
+## Proyecto completo
 
-| Fase | Contenido |
-|------|-----------|
-| 5 | Colección de auditoría, validación de datos, manejo de errores y pruebas finales |
+Las 5 fases del proyecto de aula quedaron implementadas: conexión a MongoDB, modelo de datos, autenticación JWT, algoritmos de numerología, integración con Google Gemini, y auditoría/validación/manejo de errores.
