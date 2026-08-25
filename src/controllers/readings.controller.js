@@ -1,12 +1,23 @@
 const Reading = require('../models/Reading');
+const NumerologyProfile = require('../models/NumerologyProfile');
+const { generarTexto } = require('../utils/gemini');
 
 async function generate(req, res) {
   try {
     const { tipo_lectura } = req.body;
 
-    // TODO Fase 4: construir el prompt real y llamar a Gemini.
-    const prompt_enviado = 'Prompt pendiente de construir en Fase 4';
-    const respuesta_generada = 'Respuesta pendiente de generar por IA en Fase 4';
+    const perfil = await NumerologyProfile.findOne({ usuario: req.user.id });
+
+    if (!perfil) {
+      return res.status(404).json({ mensaje: 'Primero debes calcular tu perfil numerológico' });
+    }
+
+    const prompt_enviado = `Eres un numerólogo experto. Genera una lectura de tipo "${tipo_lectura}" ` +
+      `para una persona con estos números: Camino de Vida ${perfil.numero_vida}, ` +
+      `Expresión ${perfil.numero_expresion}, Alma ${perfil.numero_alma}. ` +
+      `Escribe en español, en un tono cálido e inspirador, entre 3 y 5 párrafos.`;
+
+    const respuesta_generada = await generarTexto(prompt_enviado);
 
     const lectura = new Reading({
       usuario: req.user.id,
